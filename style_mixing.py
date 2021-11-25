@@ -9,12 +9,14 @@
 """Generate style mixing image matrix using pretrained network pickle."""
 
 import os
+from glob import glob
 import re
 from typing import List
 
 import click
 import dnnlib
 import numpy as np
+import cv2
 import PIL.Image
 import torch
 
@@ -67,8 +69,21 @@ def generate_style_mix(
     os.makedirs(outdir, exist_ok=True)
 
     print('\nGenerating W vectors...')
-    all_seeds = list(set(row_seeds + col_seeds))
-    all_z = np.stack([np.random.RandomState(seed).randn(G.z_dim) for seed in all_seeds])
+    # # 随机噪声生成的W
+    # all_seeds = list(set(row_seeds + col_seeds))
+    # all_z = np.stack([np.random.RandomState(seed).randn(G.z_dim) for seed in all_seeds])
+
+
+    # 从out文件夹下读取图片mapping得到W
+    all_seeds, all_z = [], []
+    for img_path in glob(os.path.join(outdir, "*.png")):
+        num0, num1 = os.path.splitext(os.path.basename(img_path))[0].split("-")
+        if num0 == num1:
+            all_seeds.append(num0)
+            all_z.append(cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB))
+    all_z = np.stack(all_z)
+    print(f"all_z shape: {all_z.shape}")
+
     all_w = G.mapping(torch.from_numpy(all_z).to(device), None)
     w_avg = G.mapping.w_avg
     all_w = w_avg + (all_w - w_avg) * truncation_psi
@@ -88,6 +103,7 @@ def generate_style_mix(
             image = G.synthesis(w[np.newaxis], noise_mode=noise_mode)
             image = (image.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
             image_dict[(row_seed, col_seed)] = image[0].cpu().numpy()
+
 
     print('\nSaving images...')
     os.makedirs(outdir, exist_ok=True)
