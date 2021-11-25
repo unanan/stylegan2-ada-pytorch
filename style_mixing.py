@@ -77,7 +77,10 @@ def generate_style_mix(
     # 从out文件夹下读取图片mapping得到W
     all_seeds, all_z = [], []
     for img_path in glob(os.path.join(outdir, "*.png")):
-        num0, num1 = os.path.splitext(os.path.basename(img_path))[0].split("-")
+        try:
+            num0, num1 = os.path.splitext(os.path.basename(img_path))[0].split("-")
+        except:
+            continue
         if num0 == num1:
             all_seeds.append(num0)
             all_z.append(cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB))
