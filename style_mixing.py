@@ -59,14 +59,14 @@ def generate_style_mix(
     python style_mixing.py --outdir=out --rows=85,100,75,458,1500 --cols=55,821,1789,293 \\
         --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
     """
-    print('Loading networks from "%s"...' % network_pkl)
+    print('\nLoading networks from "%s"...' % network_pkl)
     device = torch.device('cuda')
     with dnnlib.util.open_url(network_pkl) as f:
         G = legacy.load_network_pkl(f)['G_ema'].to(device) # type: ignore
 
     os.makedirs(outdir, exist_ok=True)
 
-    print('Generating W vectors...')
+    print('\nGenerating W vectors...')
     all_seeds = list(set(row_seeds + col_seeds))
     all_z = np.stack([np.random.RandomState(seed).randn(G.z_dim) for seed in all_seeds])
     all_w = G.mapping(torch.from_numpy(all_z).to(device), None)
@@ -74,12 +74,13 @@ def generate_style_mix(
     all_w = w_avg + (all_w - w_avg) * truncation_psi
     w_dict = {seed: w for seed, w in zip(all_seeds, list(all_w))}
 
-    print('Generating images...')
+    print('\nGenerating images...')
     all_images = G.synthesis(all_w, noise_mode=noise_mode)
     all_images = (all_images.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8).cpu().numpy()
     image_dict = {(seed, seed): image for seed, image in zip(all_seeds, list(all_images))}
+    print(image_dict.keys())
 
-    print('Generating style-mixed images...')
+    print('\nGenerating style-mixed images...')
     for row_seed in row_seeds:
         for col_seed in col_seeds:
             w = w_dict[row_seed].clone()
@@ -88,12 +89,12 @@ def generate_style_mix(
             image = (image.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
             image_dict[(row_seed, col_seed)] = image[0].cpu().numpy()
 
-    print('Saving images...')
+    print('\nSaving images...')
     os.makedirs(outdir, exist_ok=True)
     for (row_seed, col_seed), image in image_dict.items():
         PIL.Image.fromarray(image, 'RGB').save(f'{outdir}/{row_seed}-{col_seed}.png')
 
-    print('Saving image grid...')
+    print('\nSaving image grid...')
     W = G.img_resolution
     H = G.img_resolution
     canvas = PIL.Image.new('RGB', (W * (len(col_seeds) + 1), H * (len(row_seeds) + 1)), 'black')
