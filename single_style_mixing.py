@@ -74,6 +74,7 @@ def generate_style_mix(
 
     src_w = np.load(srcpath)
     trg_w = np.load(trgpath)
+    print(src_w)
     print('\nGenerating style-mixed image...')
     src_w[col_styles] = trg_w[col_styles]
     image = G.synthesis(src_w[np.newaxis], noise_mode=noise_mode)
