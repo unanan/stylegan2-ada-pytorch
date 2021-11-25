@@ -69,23 +69,23 @@ def generate_style_mix(
     os.makedirs(outdir, exist_ok=True)
 
     print('\nGenerating W vectors...')
-    # # 随机噪声生成的W
-    # all_seeds = list(set(row_seeds + col_seeds))
-    # all_z = np.stack([np.random.RandomState(seed).randn(G.z_dim) for seed in all_seeds])
-
-
-    # 从out文件夹下读取图片mapping得到W
-    all_seeds, all_z = [], []
-    for img_path in glob(os.path.join(outdir, "*.png")):
-        try:
-            num0, num1 = os.path.splitext(os.path.basename(img_path))[0].split("-")
-        except:
-            continue
-        if num0 == num1:
-            all_seeds.append(num0)
-            all_z.append(cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB))
-    all_z = np.stack(all_z)
+    # 随机噪声生成的W
+    all_seeds = list(set(row_seeds + col_seeds))
+    all_z = np.stack([np.random.RandomState(seed).randn(G.z_dim) for seed in all_seeds])
     print(f"all_z shape: {all_z.shape}")
+
+    # # 从out文件夹下读取图片mapping得到W
+    # all_seeds, all_z = [], []
+    # for img_path in glob(os.path.join(outdir, "*.png")):
+    #     try:
+    #         num0, num1 = os.path.splitext(os.path.basename(img_path))[0].split("-")
+    #     except:
+    #         continue
+    #     if num0 == num1:
+    #         all_seeds.append(num0)
+    #         all_z.append(cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB))
+    # all_z = np.stack(all_z)
+    # print(f"all_z shape: {all_z.shape}")
 
     all_w = G.mapping(torch.from_numpy(all_z).to(device), None)
     w_avg = G.mapping.w_avg
