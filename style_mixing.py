@@ -74,19 +74,6 @@ def generate_style_mix(
     all_z = np.stack([np.random.RandomState(seed).randn(G.z_dim) for seed in all_seeds])
     print(f"all_z shape: {all_z.shape}")
 
-    # # 从out文件夹下读取图片mapping得到W
-    # all_seeds, all_z = [], []
-    # for img_path in glob(os.path.join(outdir, "*.png")):
-    #     try:
-    #         num0, num1 = os.path.splitext(os.path.basename(img_path))[0].split("-")
-    #     except:
-    #         continue
-    #     if num0 == num1:
-    #         all_seeds.append(num0)
-    #         all_z.append(cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB))
-    # all_z = np.stack(all_z)
-    # print(f"all_z shape: {all_z.shape}")
-
     all_w = G.mapping(torch.from_numpy(all_z).to(device), None)
     w_avg = G.mapping.w_avg
     all_w = w_avg + (all_w - w_avg) * truncation_psi
@@ -96,6 +83,7 @@ def generate_style_mix(
     print('\nGenerating images...')
     all_images = G.synthesis(all_w, noise_mode=noise_mode)
     all_images = (all_images.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8).cpu().numpy()
+
     image_dict = {(seed, seed): image for seed, image in zip(all_seeds, list(all_images))}
     print(image_dict.keys())
 
